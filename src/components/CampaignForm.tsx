@@ -24,6 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
 
 const campaignFormSchema = z.object({
   name: z.string().min(3, { message: "Campaign name must be at least 3 characters" }),
@@ -102,6 +103,14 @@ const CampaignForm = () => {
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4 animate-fade-in">
+              <div>
+                <h3 className="text-lg font-medium">Campaign Details</h3>
+                <p className="text-sm text-muted-foreground">
+                  Enter the basic information about your campaign
+                </p>
+              </div>
+              <Separator />
+              
               <FormField
                 control={form.control}
                 name="name"
@@ -145,6 +154,14 @@ const CampaignForm = () => {
                 )}
               />
               
+              <div className="pt-4">
+                <h3 className="text-lg font-medium">Delivery Settings</h3>
+                <p className="text-sm text-muted-foreground">
+                  Configure where and when your campaign will run
+                </p>
+              </div>
+              <Separator />
+              
               <FormField
                 control={form.control}
                 name="platform"
@@ -187,6 +204,14 @@ const CampaignForm = () => {
                   </FormItem>
                 )}
               />
+              
+              <div className="pt-4">
+                <h3 className="text-lg font-medium">Budget & Schedule</h3>
+                <p className="text-sm text-muted-foreground">
+                  Set your campaign budget and schedule
+                </p>
+              </div>
+              <Separator />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -336,6 +361,14 @@ const CampaignForm = () => {
             </TabsContent>
             
             <TabsContent value="targeting" className="space-y-4 animate-fade-in">
+              <div>
+                <h3 className="text-lg font-medium">Audience Targeting</h3>
+                <p className="text-sm text-muted-foreground">
+                  Define who will see your ads
+                </p>
+              </div>
+              <Separator />
+              
               <FormField
                 control={form.control}
                 name="targeting.locations"
@@ -358,6 +391,14 @@ const CampaignForm = () => {
                   </FormItem>
                 )}
               />
+              
+              <div>
+                <h3 className="text-lg font-medium">Demographics</h3>
+                <p className="text-sm text-muted-foreground">
+                  Target specific demographic groups
+                </p>
+              </div>
+              <Separator />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -427,6 +468,14 @@ const CampaignForm = () => {
                 )}
               />
               
+              <div>
+                <h3 className="text-lg font-medium">Interests & Behaviors</h3>
+                <p className="text-sm text-muted-foreground">
+                  Target users based on their interests and online behaviors
+                </p>
+              </div>
+              <Separator />
+              
               <FormField
                 control={form.control}
                 name="targeting.interests"
@@ -472,6 +521,14 @@ const CampaignForm = () => {
             </TabsContent>
             
             <TabsContent value="creative" className="space-y-4 animate-fade-in">
+              <div>
+                <h3 className="text-lg font-medium">Ad Content</h3>
+                <p className="text-sm text-muted-foreground">
+                  Create compelling ad content for your campaign
+                </p>
+              </div>
+              <Separator />
+              
               <FormField
                 control={form.control}
                 name="adCreative.headline"
@@ -525,6 +582,14 @@ const CampaignForm = () => {
                   </FormItem>
                 )}
               />
+              
+              <div>
+                <h3 className="text-lg font-medium">Call to Action</h3>
+                <p className="text-sm text-muted-foreground">
+                  Define what action you want users to take
+                </p>
+              </div>
+              <Separator />
               
               <FormField
                 control={form.control}
