@@ -9,6 +9,11 @@ import Index from "./pages/Index";
 import CreateCampaign from "./pages/CreateCampaign";
 import CampaignDetails from "./pages/CampaignDetails";
 import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ResetPassword from "./pages/ResetPassword";
+import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,16 +25,73 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <div className="min-h-screen bg-background">
-          <Navbar />
-          <main>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/create" element={<CreateCampaign />} />
-              <Route path="/campaign/:id" element={<CampaignDetails />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
+          <Routes>
+            {/* Auth routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            
+            {/* App routes with Navbar */}
+            <Route
+              path="/"
+              element={
+                <>
+                  <Navbar />
+                  <main>
+                    <Index />
+                  </main>
+                </>
+              }
+            />
+            <Route
+              path="/create"
+              element={
+                <>
+                  <Navbar />
+                  <main>
+                    <CreateCampaign />
+                  </main>
+                </>
+              }
+            />
+            <Route
+              path="/campaign/:id"
+              element={
+                <>
+                  <Navbar />
+                  <main>
+                    <CampaignDetails />
+                  </main>
+                </>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <>
+                  <Navbar />
+                  <main>
+                    <Analytics />
+                  </main>
+                </>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <>
+                  <Navbar />
+                  <main>
+                    <Settings />
+                  </main>
+                </>
+              }
+            />
+            
+            {/* 404 route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </div>
       </BrowserRouter>
     </TooltipProvider>
