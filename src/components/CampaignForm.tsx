@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,8 +25,10 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { useNavigate } from "react-router-dom";
+import campaignService from "@/services/campaignService";
 
-const campaignFormSchema = z.object({
+export const campaignFormSchema = z.object({
   name: z.string().min(3, { message: "Campaign name must be at least 3 characters" }),
   objective: z.enum(["awareness", "consideration", "conversion"], {
     required_error: "Please select an objective",
@@ -55,10 +57,17 @@ const campaignFormSchema = z.object({
   }),
 });
 
-type CampaignFormValues = z.infer<typeof campaignFormSchema>;
+export type CampaignFormValues = z.infer<typeof campaignFormSchema>;
 
-const CampaignForm = () => {
+interface CampaignFormProps {
+  initialData?: Partial<CampaignFormValues>;
+  campaignId?: string;
+}
+
+const CampaignForm = ({ initialData, campaignId }: CampaignFormProps = {}) => {
   const [currentTab, setCurrentTab] = useState("basic");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
   
   const defaultValues: Partial<CampaignFormValues> = {
     objective: "consideration",
@@ -72,6 +81,7 @@ const CampaignForm = () => {
       gender: "all",
       interests: [],
     },
+    ...(initialData || {})
   };
 
   const form = useForm<CampaignFormValues>({
@@ -79,16 +89,38 @@ const CampaignForm = () => {
     defaultValues,
   });
 
-  function onSubmit(data: CampaignFormValues) {
-    console.log(data);
-    
-    toast({
-      title: "Campaign created",
-      description: "Your campaign has been created successfully and is now processing.",
-    });
-    
-    // Here we would normally send the data to the server
-    // In a real implementation, we would integrate with Facebook Marketing API
+  async function onSubmit(data: CampaignFormValues) {
+    try {
+      setIsSubmitting(true);
+      
+      if (campaignId) {
+        // Update existing campaign
+        await campaignService.updateCampaign(campaignId, data);
+        toast({
+          title: "Campaign updated",
+          description: "Your campaign has been updated successfully.",
+        });
+      } else {
+        // Create new campaign
+        await campaignService.createCampaign(data);
+        toast({
+          title: "Campaign created",
+          description: "Your campaign has been created successfully and is now processing.",
+        });
+      }
+      
+      // Redirect to campaigns list
+      navigate("/");
+    } catch (error) {
+      console.error("Error submitting campaign:", error);
+      toast({
+        title: "Error",
+        description: "There was an error processing your request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -613,7 +645,19 @@ const CampaignForm = () => {
                 >
                   Back
                 </Button>
-                <Button type="submit">Create Campaign</Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    campaignId ? "Update Campaign" : "Create Campaign"
+                  )}
+                </Button>
               </div>
             </TabsContent>
           </Tabs>

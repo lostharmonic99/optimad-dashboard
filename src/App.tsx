@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Index from "./pages/Index";
 import CreateCampaign from "./pages/CreateCampaign";
 import CampaignDetails from "./pages/CampaignDetails";
+import EditCampaign from "./pages/EditCampaign";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
@@ -62,6 +63,17 @@ const App = () => (
                   <Navbar />
                   <main>
                     <CampaignDetails />
+                  </main>
+                </>
+              }
+            />
+            <Route
+              path="/edit-campaign/:id"
+              element={
+                <>
+                  <Navbar />
+                  <main>
+                    <EditCampaign />
                   </main>
                 </>
               }

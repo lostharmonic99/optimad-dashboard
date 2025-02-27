@@ -1,5 +1,5 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardMetric from "@/components/DashboardMetric";
@@ -12,27 +12,27 @@ import {
   TrendingUp, 
   BarChart3, 
   AlertTriangle,
+  Loader2,
+  PauseCircle,
+  PlayCircle,
+  Trash2
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import campaignService from "@/services/campaignService";
+import { toast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-// Mock data - in a real app, this would come from an API
-const mockCampaignDetails = {
-  id: "1",
-  name: "Summer Collection Launch",
-  status: "active",
-  platform: "both",
-  spend: 1245.67,
-  budget: 5000,
-  startDate: "2023-06-01",
-  endDate: "2023-07-15",
-  objective: "Conversions",
-  impressions: 45678,
-  clicks: 3421,
-  cpc: 0.36,
-  ctr: 7.5,
-  conversions: 267,
-  conversionRate: 7.8,
-};
-
+// Daily performance data - would come from API in real implementation
 const dailyPerformance = [
   { date: "Jun 1", spend: 120, impressions: 5200, clicks: 130, cpc: 0.92, conversions: 18 },
   { date: "Jun 2", spend: 132, impressions: 5800, clicks: 145, cpc: 0.91, conversions: 21 },
@@ -46,8 +46,108 @@ const dailyPerformance = [
 
 const CampaignDetails = () => {
   const { id } = useParams();
-  // In a real app, we would fetch campaign details using the ID
-  const campaign = mockCampaignDetails;
+  const navigate = useNavigate();
+  const [campaign, setCampaign] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  
+  useEffect(() => {
+    const fetchCampaign = async () => {
+      try {
+        setLoading(true);
+        const data = await campaignService.getCampaign(id);
+        setCampaign(data);
+      } catch (error) {
+        console.error("Error fetching campaign:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load campaign details. Please try again later.",
+          variant: "destructive",
+        });
+        
+        // Use mock data for demonstration
+        setCampaign({
+          id: id,
+          name: "Summer Collection Launch",
+          status: "active",
+          platform: "both",
+          spend: 1245.67,
+          budget: 5000,
+          startDate: "2023-06-01",
+          endDate: "2023-07-15",
+          objective: "Conversions",
+          impressions: 45678,
+          clicks: 3421,
+          cpc: 0.36,
+          ctr: 7.5,
+          conversions: 267,
+          conversionRate: 7.8,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchCampaign();
+    }
+  }, [id]);
+
+  const handleStatusChange = async (status) => {
+    try {
+      setUpdating(true);
+      const method = status === 'active' ? campaignService.launchCampaign : campaignService.pauseCampaign;
+      const updatedCampaign = await method(id);
+      setCampaign(updatedCampaign);
+      
+      toast({
+        title: `Campaign ${status === 'active' ? 'Activated' : 'Paused'}`,
+        description: `The campaign has been ${status === 'active' ? 'activated' : 'paused'} successfully.`,
+      });
+    } catch (error) {
+      console.error("Error updating campaign status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update campaign status. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setUpdating(true);
+      await campaignService.deleteCampaign(id);
+      
+      toast({
+        title: "Campaign Deleted",
+        description: "The campaign has been deleted successfully.",
+      });
+      
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting campaign:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete campaign. Please try again.",
+        variant: "destructive",
+      });
+      setUpdating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="page-container flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading campaign details...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="page-container">
@@ -59,11 +159,54 @@ const CampaignDetails = () => {
         <div className="flex space-x-2">
           <Button 
             variant={campaign.status === "active" ? "outline" : "default"}
+            disabled={updating}
+            onClick={() => handleStatusChange(campaign.status === "active" ? "paused" : "active")}
           >
+            {updating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : campaign.status === "active" ? (
+              <PauseCircle className="h-4 w-4 mr-2" />
+            ) : (
+              <PlayCircle className="h-4 w-4 mr-2" />
+            )}
             {campaign.status === "active" ? "Pause Campaign" : "Resume Campaign"}
           </Button>
-          <Button variant="outline">Edit Campaign</Button>
-          <Button variant="destructive">Delete Campaign</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(`/edit-campaign/${id}`)}
+          >
+            Edit Campaign
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the campaign
+                  and all associated data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>
+                  {updating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       

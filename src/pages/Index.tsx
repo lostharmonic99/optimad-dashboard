@@ -6,66 +6,137 @@ import {
   BarChart, 
   TrendingUp,
   TrendingDown,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardMetric from "@/components/DashboardMetric";
 import CampaignCard from "@/components/CampaignCard";
 import PerformanceChart from "@/components/PerformanceChart";
 import { Link } from "react-router-dom";
-
-// Mock data - in a real app, this would come from an API
-const mockCampaigns = [
-  {
-    id: "1",
-    name: "Summer Collection Launch",
-    status: "active",
-    platform: "both",
-    spend: 1245.67,
-    budget: 5000,
-    startDate: "2023-06-01",
-    endDate: "2023-07-15",
-    objective: "Conversions",
-    impressions: 45678,
-    clicks: 3421,
-  },
-  {
-    id: "2",
-    name: "Holiday Special Promotion",
-    status: "paused",
-    platform: "facebook",
-    spend: 879.23,
-    budget: 2000,
-    startDate: "2023-05-15",
-    endDate: "2023-06-30",
-    objective: "Traffic",
-    impressions: 28765,
-    clicks: 1987,
-  },
-  {
-    id: "3",
-    name: "New Product Awareness",
-    status: "active",
-    platform: "instagram",
-    spend: 567.89,
-    budget: 1500,
-    startDate: "2023-06-10",
-    objective: "Brand Awareness",
-    impressions: 12345,
-    clicks: 876,
-  },
-] as const;
-
-const performanceData = [
-  { date: "Jan 1", spend: 120, impressions: 5200, clicks: 130, cpc: 0.92 },
-  { date: "Jan 2", spend: 132, impressions: 5800, clicks: 145, cpc: 0.91 },
-  { date: "Jan 3", spend: 101, impressions: 4900, clicks: 120, cpc: 0.84 },
-  { date: "Jan 4", spend: 134, impressions: 6100, clicks: 150, cpc: 0.89 },
-  { date: "Jan 5", spend: 158, impressions: 7200, clicks: 170, cpc: 0.93 },
-  { date: "Jan 6", spend: 160, impressions: 7300, clicks: 173, cpc: 0.92 },
-  { date: "Jan 7", spend: 165, impressions: 7400, clicks: 180, cpc: 0.92 },
-];
+import { useEffect, useState } from "react";
+import campaignService from "@/services/campaignService";
+import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalSpend: 0,
+    totalClicks: 0,
+    totalImpressions: 0,
+    averageCpc: 0,
+    changePercentage: 0
+  });
+  
+  // Sample performance data - in a real implementation this would come from the API
+  const performanceData = [
+    { date: "Jan 1", spend: 120, impressions: 5200, clicks: 130, cpc: 0.92 },
+    { date: "Jan 2", spend: 132, impressions: 5800, clicks: 145, cpc: 0.91 },
+    { date: "Jan 3", spend: 101, impressions: 4900, clicks: 120, cpc: 0.84 },
+    { date: "Jan 4", spend: 134, impressions: 6100, clicks: 150, cpc: 0.89 },
+    { date: "Jan 5", spend: 158, impressions: 7200, clicks: 170, cpc: 0.93 },
+    { date: "Jan 6", spend: 160, impressions: 7300, clicks: 173, cpc: 0.92 },
+    { date: "Jan 7", spend: 165, impressions: 7400, clicks: 180, cpc: 0.92 },
+  ];
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        setLoading(true);
+        const data = await campaignService.getCampaigns();
+        setCampaigns(data);
+        
+        // Calculate stats from campaigns
+        if (data.length > 0) {
+          const spend = data.reduce((sum, campaign) => sum + campaign.budget, 0);
+          const clicks = data.reduce((sum, campaign) => sum + (campaign.clicks || 0), 0);
+          const impressions = data.reduce((sum, campaign) => sum + (campaign.impressions || 0), 0);
+          const cpc = clicks > 0 ? spend / clicks : 0;
+          
+          setStats({
+            totalSpend: spend,
+            totalClicks: clicks,
+            totalImpressions: impressions,
+            averageCpc: cpc,
+            changePercentage: 5.8 // Mock change percentage
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching campaigns:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load campaign data. Please try again later.",
+          variant: "destructive",
+        });
+        
+        // Use mock data for demonstration
+        setCampaigns([
+          {
+            id: "1",
+            name: "Summer Collection Launch",
+            status: "active",
+            platform: "both",
+            spend: 1245.67,
+            budget: 5000,
+            startDate: "2023-06-01",
+            endDate: "2023-07-15",
+            objective: "Conversions",
+            impressions: 45678,
+            clicks: 3421,
+          },
+          {
+            id: "2",
+            name: "Holiday Special Promotion",
+            status: "paused",
+            platform: "facebook",
+            spend: 879.23,
+            budget: 2000,
+            startDate: "2023-05-15",
+            endDate: "2023-06-30",
+            objective: "Traffic",
+            impressions: 28765,
+            clicks: 1987,
+          },
+          {
+            id: "3",
+            name: "New Product Awareness",
+            status: "active",
+            platform: "instagram",
+            spend: 567.89,
+            budget: 1500,
+            startDate: "2023-06-10",
+            objective: "Brand Awareness",
+            impressions: 12345,
+            clicks: 876,
+          },
+        ]);
+        
+        setStats({
+          totalSpend: 2692.79,
+          totalClicks: 6284,
+          totalImpressions: 86788,
+          averageCpc: 0.42,
+          changePercentage: 5.8
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCampaigns();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="page-container flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-container">
       <div className="flex justify-between items-center mb-8">
@@ -78,8 +149,8 @@ const Index = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8" style={{ animationDelay: '0.1s' }}>
         <DashboardMetric
           title="Total Spend"
-          value={2692.79}
-          change={5.8}
+          value={stats.totalSpend}
+          change={stats.changePercentage}
           icon={<DollarSign className="h-5 w-5" />}
           intent="primary"
           prefix="$"
@@ -87,21 +158,21 @@ const Index = () => {
         />
         <DashboardMetric
           title="Total Clicks"
-          value={6284}
+          value={stats.totalClicks}
           change={12.4}
           icon={<MousePointer className="h-5 w-5" />}
           intent="success"
         />
         <DashboardMetric
           title="Total Impressions"
-          value={86788}
+          value={stats.totalImpressions}
           change={8.7}
           icon={<Eye className="h-5 w-5" />}
           intent="default"
         />
         <DashboardMetric
           title="Average CPC"
-          value={0.92}
+          value={stats.averageCpc}
           change={-1.5}
           icon={<BarChart className="h-5 w-5" />}
           intent={-1.5 < 0 ? "success" : "danger"}
@@ -128,7 +199,7 @@ const Index = () => {
           </Button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {mockCampaigns.slice(0, 2).map((campaign) => (
+          {campaigns.slice(0, 2).map((campaign) => (
             <CampaignCard key={campaign.id} {...campaign} />
           ))}
         </div>
