@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,8 +15,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Facebook, Github, Lock, Mail } from "lucide-react";
+import { Facebook, Lock, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/services/api";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -31,6 +32,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const Login = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,18 +49,21 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log("Login data:", data);
+      // Call login API
+      await authService.login({
+        email: data.email,
+        password: data.password
+      });
       
       toast({
         title: "Login successful!",
         description: "Redirecting to dashboard...",
       });
       
-      // Redirect would happen here in a real app
+      // Redirect to dashboard
+      navigate("/");
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: "Please check your credentials and try again.",
@@ -67,6 +72,14 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFacebookLogin = () => {
+    authService.facebookLogin();
+  };
+
+  const handleGoogleLogin = () => {
+    authService.googleLogin();
   };
 
   return (
@@ -98,11 +111,21 @@ const Login = () => {
             <div>
               <div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="w-full" disabled={isLoading}>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    disabled={isLoading}
+                    onClick={handleFacebookLogin}
+                  >
                     <Facebook className="mr-2 h-4 w-4" />
                     Facebook
                   </Button>
-                  <Button variant="outline" className="w-full" disabled={isLoading}>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    disabled={isLoading}
+                    onClick={handleGoogleLogin}
+                  >
                     <svg 
                       className="mr-2 h-4 w-4" 
                       viewBox="0 0 24 24"
