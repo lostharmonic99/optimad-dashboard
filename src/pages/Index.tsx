@@ -23,13 +23,13 @@ interface Campaign {
   name: string;
   status: "active" | "paused" | "completed" | "draft";
   platform: "facebook" | "instagram" | "both";
-  spend?: number;
+  spend: number;
   budget: number;
   startDate: string;
   endDate?: string;
   objective: string;
-  impressions?: number;
-  clicks?: number;
+  impressions: number;
+  clicks: number;
   [key: string]: any; // Allow for additional properties
 }
 
@@ -60,13 +60,29 @@ const Index = () => {
       try {
         setLoading(true);
         const data = await campaignService.getCampaigns();
-        setCampaigns(data);
+        
+        // Transform API response to match our Campaign interface
+        const transformedData: Campaign[] = data.map((campaign: any) => ({
+          id: String(campaign.id),
+          name: campaign.name,
+          status: campaign.status as "active" | "paused" | "completed" | "draft",
+          platform: campaign.platform as "facebook" | "instagram" | "both",
+          spend: campaign.spend || 0,
+          budget: campaign.budget,
+          startDate: campaign.start_date,
+          endDate: campaign.end_date,
+          objective: campaign.objective,
+          impressions: campaign.impressions || 0,
+          clicks: campaign.clicks || 0
+        }));
+        
+        setCampaigns(transformedData);
         
         // Calculate stats from campaigns
-        if (data.length > 0) {
-          const spend = data.reduce((sum, campaign) => sum + (campaign.budget || 0), 0);
-          const clicks = data.reduce((sum, campaign) => sum + (campaign.clicks || 0), 0);
-          const impressions = data.reduce((sum, campaign) => sum + (campaign.impressions || 0), 0);
+        if (transformedData.length > 0) {
+          const spend = transformedData.reduce((sum, campaign) => sum + (campaign.spend || 0), 0);
+          const clicks = transformedData.reduce((sum, campaign) => sum + (campaign.clicks || 0), 0);
+          const impressions = transformedData.reduce((sum, campaign) => sum + (campaign.impressions || 0), 0);
           const cpc = clicks > 0 ? spend / clicks : 0;
           
           setStats({
@@ -86,7 +102,7 @@ const Index = () => {
         });
         
         // Use mock data for demonstration
-        setCampaigns([
+        const mockCampaigns: Campaign[] = [
           {
             id: "1",
             name: "Summer Collection Launch",
@@ -125,7 +141,9 @@ const Index = () => {
             impressions: 12345,
             clicks: 876,
           },
-        ]);
+        ];
+        
+        setCampaigns(mockCampaigns);
         
         setStats({
           totalSpend: 2692.79,
@@ -216,7 +234,20 @@ const Index = () => {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {campaigns.slice(0, 2).map((campaign) => (
-            <CampaignCard key={campaign.id} {...campaign} />
+            <CampaignCard 
+              key={campaign.id}
+              id={campaign.id}
+              name={campaign.name}
+              status={campaign.status}
+              platform={campaign.platform}
+              spend={campaign.spend}
+              budget={campaign.budget}
+              startDate={campaign.startDate}
+              endDate={campaign.endDate}
+              objective={campaign.objective}
+              impressions={campaign.impressions}
+              clicks={campaign.clicks}
+            />
           ))}
         </div>
       </div>
