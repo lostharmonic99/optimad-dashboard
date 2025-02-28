@@ -20,8 +20,17 @@ class User(db.Model):
     google_id = db.Column(db.String(120), unique=True, nullable=True)
     facebook_id = db.Column(db.String(120), unique=True, nullable=True)
     
+    # RBAC fields
+    role = db.Column(db.String(20), default='user')  # 'admin', 'user', 'guest'
+    
+    # Subscription fields
+    subscription_id = db.Column(db.Integer, db.ForeignKey('subscriptions.id'), nullable=True)
+    subscription_status = db.Column(db.String(20), default='free')  # 'free', 'active', 'canceled', 'expired'
+    subscription_end_date = db.Column(db.DateTime, nullable=True)
+    
     # Relationship with campaigns
     campaigns = db.relationship('Campaign', backref='user', lazy=True)
+    refresh_tokens = db.relationship('RefreshToken', backref='user', lazy=True)
     
     def set_password(self, password):
         self.password_hash = pbkdf2_sha256.hash(password)
@@ -37,7 +46,59 @@ class User(db.Model):
             'email': self.email,
             'firstName': self.first_name,
             'lastName': self.last_name,
+            'role': self.role,
+            'subscriptionStatus': self.subscription_status,
+            'subscriptionEndDate': self.subscription_end_date.isoformat() if self.subscription_end_date else None,
             'createdAt': self.created_at.isoformat()
+        }
+    
+    def has_permission(self, permission):
+        if self.role == 'admin':
+            return True
+        
+        permissions = {
+            'user': ['view_own_campaigns', 'create_campaign', 'edit_own_campaign', 'delete_own_campaign'],
+            'guest': ['view_own_campaigns']
+        }
+        
+        return permission in permissions.get(self.role, [])
+
+class RefreshToken(db.Model):
+    __tablename__ = 'refresh_tokens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    token = db.Column(db.String(255), unique=True, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def is_valid(self):
+        return datetime.utcnow() < self.expires_at
+
+class Subscription(db.Model):
+    __tablename__ = 'subscriptions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    duration_days = db.Column(db.Integer, nullable=False)  # Duration in days
+    features = db.Column(db.String(500), nullable=False)  # JSON string of features
+    max_campaigns = db.Column(db.Integer, nullable=False, default=5)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relationship with users
+    users = db.relationship('User', backref='subscription', lazy=True)
+    
+    def to_dict(self):
+        import json
+        return {
+            'id': self.id,
+            'name': self.name,
+            'price': self.price,
+            'duration_days': self.duration_days,
+            'features': json.loads(self.features) if self.features else [],
+            'max_campaigns': self.max_campaigns,
+            'is_active': self.is_active
         }
 
 class Campaign(db.Model):
@@ -125,3 +186,18 @@ class Creative(db.Model):
             'call_to_action': self.call_to_action,
             'image_url': self.image_url
         }
+
+class Payment(db.Model):
+    __tablename__ = 'payments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    subscription_id = db.Column(db.Integer, db.ForeignKey('subscriptions.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'completed', 'failed'
+    external_payment_id = db.Column(db.String(100), nullable=True)  # Reference to payment gateway
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='payments', lazy=True)
+    subscription = db.relationship('Subscription', backref='payments', lazy=True)

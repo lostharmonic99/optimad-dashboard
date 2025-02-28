@@ -27,6 +27,27 @@ export interface Campaign {
   };
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    total_count: number;
+    total_pages: number;
+    current_page: number;
+    per_page: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}
+
+export interface CampaignFilters {
+  status?: string;
+  platform?: string;
+  page?: number;
+  per_page?: number;
+  sort_by?: string;
+  sort_dir?: 'asc' | 'desc';
+}
+
 // Convert frontend form data to API format
 const formatCampaignData = (data: CampaignFormValues) => {
   return {
@@ -54,41 +75,85 @@ const formatCampaignData = (data: CampaignFormValues) => {
 };
 
 const campaignService = {
-  getCampaigns: async (): Promise<Campaign[]> => {
-    const response = await api.get('/campaigns');
-    return response.data;
+  getCampaigns: async (filters: CampaignFilters = {}): Promise<PaginatedResponse<Campaign>> => {
+    try {
+      // Build query params
+      const params = new URLSearchParams();
+      if (filters.status) params.append('status', filters.status);
+      if (filters.platform) params.append('platform', filters.platform);
+      if (filters.page) params.append('page', String(filters.page));
+      if (filters.per_page) params.append('per_page', String(filters.per_page));
+      if (filters.sort_by) params.append('sort_by', filters.sort_by);
+      if (filters.sort_dir) params.append('sort_dir', filters.sort_dir);
+      
+      const response = await api.get(`/campaigns?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      throw error;
+    }
   },
   
   getCampaign: async (id: string): Promise<Campaign> => {
-    const response = await api.get(`/campaigns/${id}`);
-    return response.data;
+    try {
+      const response = await api.get(`/campaigns/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching campaign ${id}:`, error);
+      throw error;
+    }
   },
   
   createCampaign: async (data: CampaignFormValues): Promise<Campaign> => {
-    const formattedData = formatCampaignData(data);
-    const response = await api.post('/campaigns', formattedData);
-    return response.data;
+    try {
+      const formattedData = formatCampaignData(data);
+      const response = await api.post('/campaigns', formattedData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      throw error;
+    }
   },
   
   updateCampaign: async (id: string, data: CampaignFormValues): Promise<Campaign> => {
-    const formattedData = formatCampaignData(data);
-    const response = await api.put(`/campaigns/${id}`, formattedData);
-    return response.data;
+    try {
+      const formattedData = formatCampaignData(data);
+      const response = await api.put(`/campaigns/${id}`, formattedData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating campaign ${id}:`, error);
+      throw error;
+    }
   },
   
   deleteCampaign: async (id: string): Promise<void> => {
-    await api.delete(`/campaigns/${id}`);
+    try {
+      await api.delete(`/campaigns/${id}`);
+    } catch (error) {
+      console.error(`Error deleting campaign ${id}:`, error);
+      throw error;
+    }
   },
   
   // Additional methods for campaign actions
   launchCampaign: async (id: string): Promise<Campaign> => {
-    const response = await api.put(`/campaigns/${id}`, { status: 'active' });
-    return response.data;
+    try {
+      const response = await api.put(`/campaigns/${id}`, { status: 'active' });
+      return response.data;
+    } catch (error) {
+      console.error(`Error launching campaign ${id}:`, error);
+      throw error;
+    }
   },
   
   pauseCampaign: async (id: string): Promise<Campaign> => {
-    const response = await api.put(`/campaigns/${id}`, { status: 'paused' });
-    return response.data;
+    try {
+      const response = await api.put(`/campaigns/${id}`, { status: 'paused' });
+      return response.data;
+    } catch (error) {
+      console.error(`Error pausing campaign ${id}:`, error);
+      throw error;
+    }
   }
 };
 

@@ -3,57 +3,127 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 import json
+from sqlalchemy import desc, asc
+from math import ceil
 
-from models import db, Campaign, Targeting, Creative
+from models import db, Campaign, Targeting, Creative, User
+from middleware.rbac import require_permission
 
 campaign_bp = Blueprint('campaigns', __name__)
 
 @campaign_bp.route('/', methods=['GET'])
 @jwt_required()
+@require_permission('view_own_campaigns')
 def get_campaigns():
-    # Get user ID from JWT
-    user_id = get_jwt_identity()
-    
-    # Get campaigns for the user
-    campaigns = Campaign.query.filter_by(user_id=user_id).all()
-    
-    # Convert campaigns to dict
-    campaign_list = [campaign.to_dict() for campaign in campaigns]
-    
-    return jsonify(campaign_list), 200
+    try:
+        # Get user ID from JWT
+        user_id = get_jwt_identity()
+        
+        # Get query parameters for pagination and filtering
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        status = request.args.get('status')
+        platform = request.args.get('platform')
+        sort_by = request.args.get('sort_by', 'created_at')
+        sort_dir = request.args.get('sort_dir', 'desc')
+        
+        # Start building the query
+        query = Campaign.query.filter_by(user_id=user_id)
+        
+        # Apply filters if provided
+        if status:
+            query = query.filter_by(status=status)
+        if platform:
+            query = query.filter_by(platform=platform)
+            
+        # Apply sorting
+        if sort_dir == 'desc':
+            query = query.order_by(desc(getattr(Campaign, sort_by)))
+        else:
+            query = query.order_by(asc(getattr(Campaign, sort_by)))
+            
+        # Get total count for pagination
+        total_count = query.count()
+        total_pages = ceil(total_count / per_page)
+        
+        # Apply pagination
+        campaigns = query.offset((page - 1) * per_page).limit(per_page).all()
+        
+        # Convert campaigns to dict
+        campaign_list = [campaign.to_dict() for campaign in campaigns]
+        
+        # Prepare pagination metadata
+        pagination = {
+            'total_count': total_count,
+            'total_pages': total_pages,
+            'current_page': page,
+            'per_page': per_page,
+            'has_next': page < total_pages,
+            'has_prev': page > 1
+        }
+        
+        return jsonify({
+            'campaigns': campaign_list,
+            'pagination': pagination
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @campaign_bp.route('/<int:campaign_id>', methods=['GET'])
 @jwt_required()
+@require_permission('view_own_campaigns')
 def get_campaign(campaign_id):
-    # Get user ID from JWT
-    user_id = get_jwt_identity()
-    
-    # Get campaign for the user
-    campaign = Campaign.query.filter_by(id=campaign_id, user_id=user_id).first()
-    if not campaign:
-        return jsonify({'error': 'Campaign not found'}), 404
-    
-    # Convert campaign to dict
-    campaign_dict = campaign.to_dict()
-    
-    return jsonify(campaign_dict), 200
+    try:
+        # Get user ID from JWT
+        user_id = get_jwt_identity()
+        
+        # Get campaign for the user
+        campaign = Campaign.query.filter_by(id=campaign_id, user_id=user_id).first()
+        
+        # Check if campaign exists and user has access
+        if not campaign:
+            return jsonify({'error': 'Campaign not found'}), 404
+        
+        # Convert campaign to dict
+        campaign_dict = campaign.to_dict()
+        
+        return jsonify(campaign_dict), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @campaign_bp.route('/', methods=['POST'])
 @jwt_required()
+@require_permission('create_campaign')
 def create_campaign():
-    # Get user ID from JWT
-    user_id = get_jwt_identity()
-    
-    # Get request data
-    data = request.json
-    
-    # Create new campaign
     try:
+        # Get user ID from JWT
+        user_id = get_jwt_identity()
+        
+        # Check subscription limits
+        user = User.query.get(user_id)
+        campaign_count = Campaign.query.filter_by(user_id=user_id).count()
+        
+        if user.subscription and campaign_count >= user.subscription.max_campaigns:
+            return jsonify({
+                'error': 'Campaign limit reached for your subscription plan',
+                'message': f'Your plan allows a maximum of {user.subscription.max_campaigns} campaigns'
+            }), 403
+        
+        # Get request data
+        data = request.json
+        
+        # Validate required fields
+        if not data.get('name') or not data.get('objective') or not data.get('platform') or not data.get('budgetType') or not data.get('budget') or not data.get('startDate'):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
         # Parse dates
-        start_date = datetime.fromisoformat(data.get('startDate').replace('Z', '+00:00'))
-        end_date = None
-        if data.get('endDate'):
-            end_date = datetime.fromisoformat(data.get('endDate').replace('Z', '+00:00'))
+        try:
+            start_date = datetime.fromisoformat(data.get('startDate').replace('Z', '+00:00'))
+            end_date = None
+            if data.get('endDate'):
+                end_date = datetime.fromisoformat(data.get('endDate').replace('Z', '+00:00'))
+        except ValueError:
+            return jsonify({'error': 'Invalid date format'}), 400
         
         # Create campaign
         campaign = Campaign(
@@ -101,24 +171,24 @@ def create_campaign():
     
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 @campaign_bp.route('/<int:campaign_id>', methods=['PUT'])
 @jwt_required()
+@require_permission('edit_own_campaign')
 def update_campaign(campaign_id):
-    # Get user ID from JWT
-    user_id = get_jwt_identity()
-    
-    # Get campaign for the user
-    campaign = Campaign.query.filter_by(id=campaign_id, user_id=user_id).first()
-    if not campaign:
-        return jsonify({'error': 'Campaign not found'}), 404
-    
-    # Get request data
-    data = request.json
-    
-    # Update campaign
     try:
+        # Get user ID from JWT
+        user_id = get_jwt_identity()
+        
+        # Get campaign for the user
+        campaign = Campaign.query.filter_by(id=campaign_id, user_id=user_id).first()
+        if not campaign:
+            return jsonify({'error': 'Campaign not found'}), 404
+        
+        # Get request data
+        data = request.json
+        
         # Update campaign fields if provided
         if 'name' in data:
             campaign.name = data.get('name')
@@ -188,21 +258,22 @@ def update_campaign(campaign_id):
     
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 @campaign_bp.route('/<int:campaign_id>', methods=['DELETE'])
 @jwt_required()
+@require_permission('delete_own_campaign')
 def delete_campaign(campaign_id):
-    # Get user ID from JWT
-    user_id = get_jwt_identity()
-    
-    # Get campaign for the user
-    campaign = Campaign.query.filter_by(id=campaign_id, user_id=user_id).first()
-    if not campaign:
-        return jsonify({'error': 'Campaign not found'}), 404
-    
-    # Delete campaign
     try:
+        # Get user ID from JWT
+        user_id = get_jwt_identity()
+        
+        # Get campaign for the user
+        campaign = Campaign.query.filter_by(id=campaign_id, user_id=user_id).first()
+        if not campaign:
+            return jsonify({'error': 'Campaign not found'}), 404
+        
+        # Delete campaign
         db.session.delete(campaign)
         db.session.commit()
         
@@ -210,4 +281,4 @@ def delete_campaign(campaign_id):
     
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
