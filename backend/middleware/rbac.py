@@ -1,40 +1,52 @@
-
 from functools import wraps
-from flask import jsonify
-from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
-from models import User
+from flask import jsonify, request
+from flask_jwt_extended import JWTManager
 
-def setup_rbac(jwt):
-    """Setup JWT claims to include user role"""
+def setup_rbac(jwt: JWTManager):
+    """Setup JWT claims to include user role."""
     
     @jwt.additional_claims_loader
     def add_claims_to_access_token(identity):
+        from models import User
         user = User.query.get(identity)
         if user:
             return {'role': user.role}
         return {'role': 'guest'}
 
-def require_permission(permission):
-    """Decorator for requiring a specific permission"""
-    def decorator(fn):
-        @wraps(fn)
+def require_role(role):
+    """Decorator to enforce role-based access control."""
+    def decorator(f):
+        @wraps(f)
         def wrapper(*args, **kwargs):
-            # Verify JWT
-            verify_jwt_in_request()
-            
-            # Get user ID from JWT
-            user_id = get_jwt_identity()
-            
-            # Get user from database
-            user = User.query.get(user_id)
+            # Get the current user from the request (assumes authentication middleware has run)
+            user = getattr(request, 'user', None)
             if not user:
-                return jsonify({'error': 'User not found'}), 404
-            
-            # Check if user has the required permission
+                return jsonify({'error': 'Unauthorized'}), 401
+
+            # Check if the user has the required role
+            if user.role != role:
+                return jsonify({'error': 'Forbidden', 'message': f'Role {role} required'}), 403
+
+            # User has the required role, proceed with the function
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+def require_permission(permission):
+    """Decorator to enforce permission-based access control."""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            # Get the current user from the request
+            user = getattr(request, 'user', None)
+            if not user:
+                return jsonify({'error': 'Unauthorized'}), 401
+
+            # Check if the user has the required permission
             if not user.has_permission(permission):
-                return jsonify({'error': 'Permission denied', 'required': permission}), 403
-            
-            # User has permission, proceed with the function
-            return fn(*args, **kwargs)
+                return jsonify({'error': 'Forbidden', 'message': f'Permission {permission} required'}), 403
+
+            # User has the required permission, proceed with the function
+            return f(*args, **kwargs)
         return wrapper
     return decorator

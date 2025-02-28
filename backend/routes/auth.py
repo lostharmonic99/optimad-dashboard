@@ -61,8 +61,8 @@ def register():
         db.session.commit()
         
         # Generate tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         
         # Store refresh token
         store_refresh_token(user.id, refresh_token)
@@ -94,8 +94,8 @@ def login():
             return jsonify({'error': 'Invalid email or password'}), 401
         
         # Generate tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         
         # Store refresh token
         store_refresh_token(user.id, refresh_token)
@@ -154,8 +154,8 @@ def google_login():
         db.session.commit()
         
         # Generate tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         
         # Store refresh token
         store_refresh_token(user.id, refresh_token)
@@ -214,8 +214,8 @@ def facebook_login():
         db.session.commit()
         
         # Generate tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         
         # Store refresh token
         store_refresh_token(user.id, refresh_token)
@@ -263,7 +263,7 @@ def refresh_token():
             return jsonify({'error': 'User not found'}), 404
         
         # Generate new access token
-        access_token = create_access_token(identity=user_id)
+        access_token = create_access_token(identity=str(user_id))
         
         resp = make_response(jsonify({
             'message': 'Token refreshed successfully'

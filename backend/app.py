@@ -1,17 +1,14 @@
-
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
+from flask_migrate import Migrate
+import click
 
-from models import db
-from routes.auth import auth_bp
-from routes.campaigns import campaign_bp
-from routes.subscriptions import subscription_bp
-from middleware.error_handler import register_error_handlers
-from middleware.rbac import setup_rbac
+# Import all models
+from models import db, User, RefreshToken, Subscription, Campaign, Targeting, Creative, Payment
 
 # Load environment variables
 load_dotenv()
@@ -36,24 +33,24 @@ CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 jwt = JWTManager(app)
 db.init_app(app)
 
+# Initialize Flask-Migrate
+migrate = Migrate(app, db)
+
 # Register blueprints
+from routes.auth import auth_bp
+from routes.campaigns import campaign_bp
+from routes.subscriptions import subscription_bp
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(campaign_bp, url_prefix='/campaigns')
 app.register_blueprint(subscription_bp, url_prefix='/subscriptions')
 
 # Setup error handlers
+from middleware.error_handler import register_error_handlers
 register_error_handlers(app)
 
 # Setup role-based access control
+from middleware.rbac import setup_rbac
 setup_rbac(jwt)
-
-# Create tables if they don't exist
-@app.before_first_request
-def create_tables():
-    db.create_all()
-    from seed_data import seed_subscriptions
-    with app.app_context():
-        seed_subscriptions()
 
 # Health check route
 @app.route('/')

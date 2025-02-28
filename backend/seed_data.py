@@ -1,6 +1,8 @@
 
 from models import db, Subscription
 import json
+from models import User, db
+from passlib.hash import pbkdf2_sha256
 
 def seed_subscriptions():
     """Seed subscription plans if they don't exist"""
@@ -57,3 +59,32 @@ def seed_subscriptions():
         db.session.add(subscription)
     
     db.session.commit()
+
+def create_superuser():
+    """Create a superuser during deployment."""
+    superuser_email = "superuser@optimad.com"
+    superuser_password = "superuser123"
+
+    # Check if superuser already exists
+    existing_superuser = User.query.filter_by(email=superuser_email).first()
+    if existing_superuser:
+        print("Superuser already exists.")
+        return
+
+    # Create superuser
+    superuser = User(
+        email=superuser_email,
+        first_name="Super",
+        last_name="User",
+        role="superuser",  # Assign superuser role
+        subscription_status="active"  # Default subscription
+    )
+    superuser.set_password(superuser_password)
+
+    # Save to database
+    db.session.add(superuser)
+    db.session.commit()
+    print("Superuser created successfully.")
+
+# Run the script during deployment
+create_superuser()

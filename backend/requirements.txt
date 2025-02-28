@@ -7,7 +7,7 @@ SQLAlchemy==2.0.20
 passlib==1.7.4
 python-dotenv==1.0.0
 gunicorn==21.2.0
-requests==2.31.0
+requests>=2.20.0,<3.0.0
 email-validator==2.1.0.post1
 stripe==7.5.0
 paypalrestsdk==1.13.1

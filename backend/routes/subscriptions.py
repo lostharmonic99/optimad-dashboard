@@ -398,3 +398,42 @@ def mpesa_webhook():
     except Exception as e:
         current_app.logger.error(f"Error in MPESA webhook: {str(e)}")
         return jsonify({'error': str(e)}), 400
+
+from flask import Blueprint, request, jsonify
+from models import User, Subscription, db
+from middleware.rbac import require_role
+
+subscription_bp = Blueprint('subscriptions', __name__)
+
+@subscription_bp.route('/override', methods=['POST'])
+@require_role('superuser')  # Only superuser can access this route
+def override_subscription():
+    """Override a user's subscription."""
+    data = request.json
+    user_id = data.get('user_id')
+    subscription_id = data.get('subscription_id')
+
+    if not user_id or not subscription_id:
+        return jsonify({'error': 'User ID and subscription ID are required'}), 400
+
+    # Find user and subscription
+    user = User.query.get(user_id)
+    subscription = Subscription.query.get(subscription_id)
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    if not subscription:
+        return jsonify({'error': 'Subscription not found'}), 404
+
+    # Override subscription
+    user.subscription_id = subscription.id
+    user.subscription_status = 'active'
+    user.subscription_end_date = None  # Reset end date
+
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Subscription overridden successfully',
+        'user': user.to_dict(),
+        'subscription': subscription.to_dict()
+    }), 200

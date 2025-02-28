@@ -48,6 +48,7 @@ type StepThreeFormValues = z.infer<typeof stepThreeSchema>;
 
 const Onboarding = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState({
     businessName: "",
@@ -113,6 +114,7 @@ const Onboarding = () => {
     
     // In a real app, you would redirect to the dashboard or home page
     console.log("Onboarding complete, would redirect to dashboard");
+    navigate("/dashboard")
   };
 
   return (
