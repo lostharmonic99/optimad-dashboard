@@ -17,6 +17,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
+import Subscription from "./pages/Subscription";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -110,6 +111,17 @@ const App = () => (
                   <Navbar />
                   <main>
                     <Settings />
+                  </main>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/subscription"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <main>
+                    <Subscription />
                   </main>
                 </ProtectedRoute>
               }
