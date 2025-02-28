@@ -17,8 +17,24 @@ import { useEffect, useState } from "react";
 import campaignService from "@/services/campaignService";
 import { toast } from "@/components/ui/use-toast";
 
+// Define Campaign type to handle possible missing properties
+interface Campaign {
+  id: string;
+  name: string;
+  status: "active" | "paused" | "completed" | "draft";
+  platform: "facebook" | "instagram" | "both";
+  spend?: number;
+  budget: number;
+  startDate: string;
+  endDate?: string;
+  objective: string;
+  impressions?: number;
+  clicks?: number;
+  [key: string]: any; // Allow for additional properties
+}
+
 const Index = () => {
-  const [campaigns, setCampaigns] = useState([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalSpend: 0,
@@ -48,7 +64,7 @@ const Index = () => {
         
         // Calculate stats from campaigns
         if (data.length > 0) {
-          const spend = data.reduce((sum, campaign) => sum + campaign.budget, 0);
+          const spend = data.reduce((sum, campaign) => sum + (campaign.budget || 0), 0);
           const clicks = data.reduce((sum, campaign) => sum + (campaign.clicks || 0), 0);
           const impressions = data.reduce((sum, campaign) => sum + (campaign.impressions || 0), 0);
           const cpc = clicks > 0 ? spend / clicks : 0;
