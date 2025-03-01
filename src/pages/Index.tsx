@@ -59,10 +59,13 @@ const Index = () => {
     const fetchCampaigns = async () => {
       try {
         setLoading(true);
-        const data = await campaignService.getCampaigns();
+        const response = await campaignService.getCampaigns();
+        
+        // Extract campaigns array from the paginated response
+        const campaignsData = response.data || [];
         
         // Transform API response to match our Campaign interface
-        const transformedData: Campaign[] = data.map((campaign: any) => ({
+        const transformedData: Campaign[] = campaignsData.map((campaign: any) => ({
           id: String(campaign.id),
           name: campaign.name,
           status: campaign.status as "active" | "paused" | "completed" | "draft",

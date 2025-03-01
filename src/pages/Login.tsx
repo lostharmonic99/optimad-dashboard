@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -75,11 +74,13 @@ const Login = () => {
   };
 
   const handleFacebookLogin = () => {
-    authService.facebookLogin();
+    // Redirect to Facebook OAuth URL or handle SDK
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/facebook/login`;
   };
 
   const handleGoogleLogin = () => {
-    authService.googleLogin();
+    // Redirect to Google OAuth URL
+    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`;
   };
 
   return (

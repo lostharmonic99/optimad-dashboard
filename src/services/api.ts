@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -112,29 +111,13 @@ export const authService = {
     }
   },
   
-  // Social login methods
-  googleLogin: async (token: string) => {
-    try {
-      const response = await api.post('/auth/google', { token });
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(error.response.data.error || 'Google login failed');
-      }
-      throw new Error('Google login failed, please try again');
-    }
+  // Social login methods - these now work with OAuth flow instead of token-based auth
+  googleLogin: () => {
+    window.location.href = `${API_URL}/auth/google/login`;
   },
   
-  facebookLogin: async (token: string) => {
-    try {
-      const response = await api.post('/auth/facebook', { token });
-      return response.data;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(error.response.data.error || 'Facebook login failed');
-      }
-      throw new Error('Facebook login failed, please try again');
-    }
+  facebookLogin: () => {
+    window.location.href = `${API_URL}/auth/facebook/login`;
   }
 };
 
