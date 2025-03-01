@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -14,6 +15,7 @@ const api = axios.create({
 // Add request interceptor to handle errors
 api.interceptors.request.use(
   (config) => {
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
@@ -25,10 +27,13 @@ api.interceptors.request.use(
 // Add response interceptor to handle errors and refresh tokens
 api.interceptors.response.use(
   (response) => {
+    console.log(`API Response: ${response.status} ${response.config.url}`);
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
+    
+    console.log(`API Error Response: ${error.response?.status} ${originalRequest?.url}`);
     
     // If error is 401 (Unauthorized) and not a refresh token request
     if (error.response?.status === 401 && 
@@ -38,16 +43,19 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       
       try {
+        console.log('Attempting to refresh token...');
         // Try to refresh the token
-        await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        await axios.post(`${API_URL}/auth/refresh`, {}, { 
+          withCredentials: true 
+        });
         
+        console.log('Token refresh successful, retrying original request');
         // Retry the original request
         return api(originalRequest);
       } catch (refreshError) {
         // If refresh fails, redirect to login
         console.error('Token refresh failed:', refreshError);
         authService.logout();
-        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
@@ -60,9 +68,12 @@ api.interceptors.response.use(
 export const authService = {
   login: async (credentials: { email: string; password: string }) => {
     try {
+      console.log('Attempting login with:', credentials.email);
       const response = await api.post('/auth/login', credentials);
+      console.log('Login successful');
       return response.data;
     } catch (error) {
+      console.error('Login error:', error);
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(error.response.data.error || 'Login failed');
       }
@@ -84,7 +95,9 @@ export const authService = {
   
   logout: async () => {
     try {
+      console.log('Logging out user...');
       await api.post('/auth/logout');
+      console.log('Logout successful, redirecting to login');
       window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
@@ -94,7 +107,9 @@ export const authService = {
   
   getCurrentUser: async () => {
     try {
+      console.log('Fetching current user data...');
       const response = await api.get('/auth/me');
+      console.log('Current user:', response.data);
       return response.data;
     } catch (error) {
       console.error('Get current user error:', error);
@@ -104,9 +119,13 @@ export const authService = {
   
   isAuthenticated: async () => {
     try {
+      console.log('Checking authentication status...');
       const user = await authService.getCurrentUser();
-      return !!user;
+      const authenticated = !!user;
+      console.log('Authentication status:', authenticated);
+      return authenticated;
     } catch (error) {
+      console.error('Auth check error:', error);
       return false;
     }
   },

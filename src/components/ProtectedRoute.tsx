@@ -11,15 +11,20 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsCheckingAuth(true);
         const authenticated = await authService.isAuthenticated();
+        console.log("Auth check result:", authenticated);
         setIsAuthenticated(authenticated);
       } catch (error) {
         console.error("Auth check failed:", error);
         setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
     
@@ -27,7 +32,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }, []);
 
   // Show loading spinner while checking authentication
-  if (isAuthenticated === null) {
+  if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size="lg" />
@@ -37,9 +42,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
+    console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  console.log("Authenticated, rendering protected content");
   return <>{children}</>;
 };
 

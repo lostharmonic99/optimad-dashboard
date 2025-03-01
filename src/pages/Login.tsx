@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -46,8 +47,10 @@ const Login = () => {
         description: "You've been successfully logged in",
       });
       
-      // Redirect to dashboard after successful login
-      navigate("/dashboard");
+      // Explicitly navigate after successful login
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 500); // Small delay to ensure toast is shown
       
     } catch (error) {
       console.error("Login error:", error);

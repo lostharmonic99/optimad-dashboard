@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -22,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { authService } from "@/services/api";
 
 const userFormSchema = z.object({
   organization: z.string().min(1, "Organization name is required"),
@@ -51,6 +51,7 @@ const Onboarding = () => {
   const onSubmit = async (data: UserFormValues) => {
     setIsLoading(true);
     try {
+      console.log('Submitting onboarding data:', data);
       // Save onboarding data - this would typically update user profile
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
@@ -59,8 +60,13 @@ const Onboarding = () => {
         description: "Your profile has been set up successfully",
       });
       
-      navigate("/dashboard");
+      // Explicitly navigate with timeout to ensure toast is shown
+      setTimeout(() => {
+        console.log('Navigating to dashboard after onboarding');
+        navigate("/dashboard");
+      }, 500);
     } catch (error) {
+      console.error('Onboarding error:', error);
       toast({
         variant: "destructive",
         title: "Failed to complete onboarding",
@@ -111,7 +117,10 @@ const Onboarding = () => {
                       <SelectItem value="healthcare">Healthcare</SelectItem>
                       <SelectItem value="finance">Finance</SelectItem>
                       <SelectItem value="education">Education</SelectItem>
-                      {/* Add more industries as needed */}
+                      <SelectItem value="retail">Retail</SelectItem>
+                      <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                      <SelectItem value="media">Media & Entertainment</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormControl>
@@ -157,8 +166,8 @@ const Onboarding = () => {
             )}
           />
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Submitting..." : "Submit"}
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? "Submitting..." : "Complete Setup"}
           </Button>
         </form>
       </Form>

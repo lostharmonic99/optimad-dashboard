@@ -19,121 +19,148 @@ import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import Subscription from "./pages/Subscription";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useEffect } from "react";
+import { authService } from "@/services/api";
 
-const queryClient = new QueryClient();
+// Create a new QueryClient instance with improved settings
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <div className="min-h-screen bg-background">
-          <Routes>
-            {/* Landing page */}
-            <Route path="/" element={<LandingPage />} />
-            
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            
-            {/* Protected routes */}
-            <Route 
-              path="/onboarding" 
-              element={
-                <ProtectedRoute>
-                  <Onboarding />
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Protected app routes with Navbar */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Navbar />
-                  <main>
-                    <Index />
-                  </main>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/create"
-              element={
-                <ProtectedRoute>
-                  <Navbar />
-                  <main>
-                    <CreateCampaign />
-                  </main>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/campaign/:id"
-              element={
-                <ProtectedRoute>
-                  <Navbar />
-                  <main>
-                    <CampaignDetails />
-                  </main>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/edit-campaign/:id"
-              element={
-                <ProtectedRoute>
-                  <Navbar />
-                  <main>
-                    <EditCampaign />
-                  </main>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                <ProtectedRoute>
-                  <Navbar />
-                  <main>
-                    <Analytics />
-                  </main>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Navbar />
-                  <main>
-                    <Settings />
-                  </main>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/subscription"
-              element={
-                <ProtectedRoute>
-                  <Navbar />
-                  <main>
-                    <Subscription />
-                  </main>
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* 404 route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Preload auth state when app loads
+  useEffect(() => {
+    const preloadAuth = async () => {
+      try {
+        console.log("Preloading authentication state...");
+        await authService.isAuthenticated();
+      } catch (error) {
+        console.error("Error preloading auth state:", error);
+      }
+    };
+    
+    preloadAuth();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              {/* Landing page */}
+              <Route path="/" element={<LandingPage />} />
+              
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              
+              {/* Protected routes */}
+              <Route 
+                path="/onboarding" 
+                element={
+                  <ProtectedRoute>
+                    <Onboarding />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Protected app routes with Navbar */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Navbar />
+                    <main className="container mx-auto py-6 px-4">
+                      <Index />
+                    </main>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/create"
+                element={
+                  <ProtectedRoute>
+                    <Navbar />
+                    <main className="container mx-auto py-6 px-4">
+                      <CreateCampaign />
+                    </main>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/campaign/:id"
+                element={
+                  <ProtectedRoute>
+                    <Navbar />
+                    <main className="container mx-auto py-6 px-4">
+                      <CampaignDetails />
+                    </main>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/edit-campaign/:id"
+                element={
+                  <ProtectedRoute>
+                    <Navbar />
+                    <main className="container mx-auto py-6 px-4">
+                      <EditCampaign />
+                    </main>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute>
+                    <Navbar />
+                    <main className="container mx-auto py-6 px-4">
+                      <Analytics />
+                    </main>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Navbar />
+                    <main className="container mx-auto py-6 px-4">
+                      <Settings />
+                    </main>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/subscription"
+                element={
+                  <ProtectedRoute>
+                    <Navbar />
+                    <main className="container mx-auto py-6 px-4">
+                      <Subscription />
+                    </main>
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* 404 route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
