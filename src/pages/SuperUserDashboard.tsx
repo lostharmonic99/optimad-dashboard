@@ -1,86 +1,125 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { Button, Input, Select } from '@/components/ui';
-import { toast } from '@/components/ui/use-toast';
-import { createAdmin, assignRole, overrideSubscription } from '@/services/adminService';
+import { useEffect, useState } from "react";
+import useAuth from "@/hooks/useAuth";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import DashboardMetric from "@/components/DashboardMetric";
+import PerformanceChart from "@/components/PerformanceChart";
+import { adminService } from "@/services/adminService";
 
-const SuperuserDashboard = () => {
-  const { user } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [userId, setUserId] = useState('');
-  const [role, setRole] = useState('admin');
-  const [subscriptionId, setSubscriptionId] = useState('');
+interface SuperUserDashboardProps {
+  // Define any props here
+}
 
-  const handleCreateAdmin = async () => {
-    try {
-      await createAdmin({ email, password, firstName, lastName });
-      toast({ title: 'Admin created successfully' });
-    } catch (error) {
-      toast({ title: 'Error creating admin', variant: 'destructive' });
+const SuperUserDashboard: React.FC<SuperUserDashboardProps> = () => {
+  const { user, loading, error } = useAuth();
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [activeSubscriptions, setActiveSubscriptions] = useState<number>(0);
+  const [revenue, setRevenue] = useState<number>(0);
+
+  useEffect(() => {
+    if (!loading && user?.role !== 'admin') {
+      // Handle unauthorized access
+      console.warn("User is not authorized to view this page");
+      // Redirect or show an error message
     }
-  };
+  }, [user, loading]);
 
-  const handleAssignRole = async () => {
-    try {
-      await assignRole({ userId, role });
-      toast({ title: 'Role assigned successfully' });
-    } catch (error) {
-      toast({ title: 'Error assigning role', variant: 'destructive' });
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        const campaignsData = await adminService.getAllCampaigns();
+        setCampaigns(campaignsData);
+
+        const usersCount = await adminService.getTotalUsers();
+        setTotalUsers(usersCount);
+
+        const subscriptionsCount = await adminService.getActiveSubscriptions();
+        setActiveSubscriptions(subscriptionsCount);
+
+        const totalRevenue = await adminService.getTotalRevenue();
+        setRevenue(totalRevenue);
+
+      } catch (err) {
+        console.error("Failed to fetch admin data:", err);
+      }
+    };
+
+    if (user?.role === 'admin') {
+      fetchAdminData();
     }
-  };
+  }, [user]);
 
-  const handleOverrideSubscription = async () => {
-    try {
-      await overrideSubscription({ userId, subscriptionId });
-      toast({ title: 'Subscription overridden successfully' });
-    } catch (error) {
-      toast({ title: 'Error overriding subscription', variant: 'destructive' });
-    }
-  };
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-  if (user?.role !== 'superuser') {
-    return <div>Access denied</div>;
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!user || user.role !== 'admin') {
+    return <div>Unauthorized</div>;
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Superuser Dashboard</h1>
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-semibold mb-5">Super User Dashboard</h1>
 
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold">Create Admin</h2>
-        <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <Input placeholder="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-        <Input placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-        <Button onClick={handleCreateAdmin}>Create Admin</Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <DashboardMetric label="Total Campaigns" value={campaigns.length} />
+        <DashboardMetric label="Total Users" value={totalUsers} />
+        <DashboardMetric label="Active Subscriptions" value={activeSubscriptions} />
+        <DashboardMetric label="Total Revenue" value={`$${revenue}`} />
       </div>
 
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold">Assign Role</h2>
-        <Input placeholder="User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
-        <Select value={role} onValueChange={setRole}>
-          <Select.Trigger>
-            <Select.Value placeholder="Select role" />
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="admin">Admin</Select.Item>
-            <Select.Item value="user">User</Select.Item>
-          </Select.Content>
-        </Select>
-        <Button onClick={handleAssignRole}>Assign Role</Button>
-      </div>
-
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold">Override Subscription</h2>
-        <Input placeholder="User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
-        <Input placeholder="Subscription ID" value={subscriptionId} onChange={(e) => setSubscriptionId(e.target.value)} />
-        <Button onClick={handleOverrideSubscription}>Override Subscription</Button>
-      </div>
+      <Tabs defaultvalue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">
+          <Card>
+            <CardHeader>
+              <CardTitle>Campaign Performance</CardTitle>
+              <CardDescription>Overview of recent campaign performance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PerformanceChart data={campaigns} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="performance">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Engagement</CardTitle>
+              <CardDescription>Metrics on user engagement and activity</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <p>User Engagement Metrics Here</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="analytics">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Analytics</CardTitle>
+              <CardDescription>Insights into subscription trends</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <p>Subscription Analytics Data Here</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
 
-export default SuperuserDashboard;
+export default SuperUserDashboard;
