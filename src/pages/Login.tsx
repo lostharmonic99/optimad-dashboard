@@ -40,6 +40,7 @@ const Login = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
+      console.log("Login submission with:", data.email);
       await authService.login(data);
       
       toast({
@@ -47,10 +48,12 @@ const Login = () => {
         description: "You've been successfully logged in",
       });
       
-      // Explicitly navigate after successful login
+      // Explicitly navigate after successful login with a small delay
+      // to ensure cookies are properly set
+      console.log("Login successful, navigating to dashboard...");
       setTimeout(() => {
         navigate("/dashboard");
-      }, 500); // Small delay to ensure toast is shown
+      }, 500);
       
     } catch (error) {
       console.error("Login error:", error);
@@ -64,14 +67,14 @@ const Login = () => {
     }
   };
 
-  const handleFacebookLogin = () => {
-    // Redirect to Facebook OAuth URL or handle SDK
-    window.location.href = `${import.meta.env.VITE_API_URL}/auth/facebook/login`;
+  const handleGoogleLogin = () => {
+    console.log("Redirecting to Google OAuth login");
+    authService.googleLogin();
   };
 
-  const handleGoogleLogin = () => {
-    // Redirect to Google OAuth URL
-    window.location.href = `${import.meta.env.VITE_API_URL}/auth/google/login`;
+  const handleFacebookLogin = () => {
+    console.log("Redirecting to Facebook OAuth login");
+    authService.facebookLogin();
   };
 
   return (

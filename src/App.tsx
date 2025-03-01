@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,9 +33,22 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  // Preload auth state when app loads
+  // Preload auth state when app loads, but only once
   useEffect(() => {
+    // Skip auth preloading for public routes to avoid refresh loops
+    const currentPath = window.location.pathname;
+    const isPublicRoute = 
+      currentPath === '/' || 
+      currentPath === '/login' || 
+      currentPath === '/signup' || 
+      currentPath.includes('/reset-password');
+    
     const preloadAuth = async () => {
+      if (isPublicRoute) {
+        console.log("Skipping auth preload for public route:", currentPath);
+        return;
+      }
+      
       try {
         console.log("Preloading authentication state...");
         await authService.isAuthenticated();

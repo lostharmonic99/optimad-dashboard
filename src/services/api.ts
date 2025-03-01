@@ -24,6 +24,10 @@ api.interceptors.request.use(
   }
 );
 
+// Flag to prevent infinite refresh loops
+let isRefreshing = false;
+let refreshAttempted = false;
+
 // Add response interceptor to handle errors and refresh tokens
 api.interceptors.response.use(
   (response) => {
@@ -35,12 +39,16 @@ api.interceptors.response.use(
     
     console.log(`API Error Response: ${error.response?.status} ${originalRequest?.url}`);
     
-    // If error is 401 (Unauthorized) and not a refresh token request
+    // If error is 401 (Unauthorized) and not a refresh token request and we haven't tried refreshing yet
     if (error.response?.status === 401 && 
         !originalRequest._retry && 
-        !originalRequest.url?.includes('/auth/refresh')) {
+        !originalRequest.url?.includes('/auth/refresh') &&
+        !isRefreshing && 
+        !refreshAttempted) {
       
       originalRequest._retry = true;
+      isRefreshing = true;
+      refreshAttempted = true;
       
       try {
         console.log('Attempting to refresh token...');
@@ -50,12 +58,22 @@ api.interceptors.response.use(
         });
         
         console.log('Token refresh successful, retrying original request');
+        isRefreshing = false;
         // Retry the original request
         return api(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, redirect to login
+        // If refresh fails, redirect to login but avoid loops
         console.error('Token refresh failed:', refreshError);
-        authService.logout();
+        isRefreshing = false;
+        
+        // Only redirect to login if not already on the login page
+        if (!window.location.pathname.includes('/login')) {
+          console.log('Not on login page, redirecting to login');
+          window.location.href = '/login';
+        } else {
+          console.log('Already on login page, not redirecting');
+        }
+        
         return Promise.reject(refreshError);
       }
     }
@@ -71,6 +89,10 @@ export const authService = {
       console.log('Attempting login with:', credentials.email);
       const response = await api.post('/auth/login', credentials);
       console.log('Login successful');
+      
+      // Reset refresh attempt flag after successful login
+      refreshAttempted = false;
+      
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
@@ -84,6 +106,10 @@ export const authService = {
   register: async (data: { email: string; password: string; firstName: string; lastName: string }) => {
     try {
       const response = await api.post('/auth/register', data);
+      
+      // Reset refresh attempt flag after successful registration
+      refreshAttempted = false;
+      
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -98,9 +124,20 @@ export const authService = {
       console.log('Logging out user...');
       await api.post('/auth/logout');
       console.log('Logout successful, redirecting to login');
+      
+      // Reset the refresh flags
+      refreshAttempted = false;
+      isRefreshing = false;
+      
+      // Use navigate to prevent page reload
       window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
+      
+      // Reset the refresh flags even on error
+      refreshAttempted = false;
+      isRefreshing = false;
+      
       window.location.href = '/login';
     }
   },
@@ -113,11 +150,21 @@ export const authService = {
       return response.data;
     } catch (error) {
       console.error('Get current user error:', error);
+      // Don't reset flags here, as this might be called from various places
       return null;
     }
   },
   
   isAuthenticated: async () => {
+    // If already on login page, no need to check auth status to avoid loops
+    if (window.location.pathname.includes('/login') || 
+        window.location.pathname === '/' || 
+        window.location.pathname.includes('/signup') ||
+        window.location.pathname.includes('/reset-password')) {
+      console.log('On public page, skipping auth check');
+      return false;
+    }
+    
     try {
       console.log('Checking authentication status...');
       const user = await authService.getCurrentUser();

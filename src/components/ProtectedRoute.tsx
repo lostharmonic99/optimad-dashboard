@@ -14,22 +14,35 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const checkAuth = async () => {
       try {
         setIsCheckingAuth(true);
+        console.log("Protected route - checking auth for:", location.pathname);
         const authenticated = await authService.isAuthenticated();
-        console.log("Auth check result:", authenticated);
-        setIsAuthenticated(authenticated);
+        
+        if (isMounted) {
+          console.log("Auth check result:", authenticated);
+          setIsAuthenticated(authenticated);
+          setIsCheckingAuth(false);
+        }
       } catch (error) {
         console.error("Auth check failed:", error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsCheckingAuth(false);
+        if (isMounted) {
+          setIsAuthenticated(false);
+          setIsCheckingAuth(false);
+        }
       }
     };
     
     checkAuth();
-  }, []);
+    
+    // Cleanup function to handle component unmounting
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname]);
 
   // Show loading spinner while checking authentication
   if (isCheckingAuth) {
@@ -42,11 +55,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
-    console.log("Not authenticated, redirecting to login");
+    console.log("Not authenticated, redirecting to login from:", location.pathname);
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  console.log("Authenticated, rendering protected content");
+  console.log("Authenticated, rendering protected content for:", location.pathname);
   return <>{children}</>;
 };
 
