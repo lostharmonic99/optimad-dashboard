@@ -20,6 +20,20 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       try {
         setIsCheckingAuth(true);
         console.log("Protected route - checking auth for:", location.pathname);
+        
+        // Skip auth check if we're already on a public route
+        if (location.pathname.includes('/login') || 
+            location.pathname === '/' || 
+            location.pathname.includes('/signup') ||
+            location.pathname.includes('/reset-password')) {
+          console.log('On public page, auth check not needed');
+          if (isMounted) {
+            setIsAuthenticated(false);
+            setIsCheckingAuth(false);
+          }
+          return;
+        }
+        
         const authenticated = await authService.isAuthenticated();
         
         if (isMounted) {

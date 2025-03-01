@@ -48,12 +48,9 @@ const Login = () => {
         description: "You've been successfully logged in",
       });
       
-      // Explicitly navigate after successful login with a small delay
-      // to ensure cookies are properly set
-      console.log("Login successful, navigating to dashboard...");
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 500);
+      // Force immediate redirect to dashboard
+      console.log("Login successful, navigating to dashboard immediately");
+      navigate("/dashboard", { replace: true });
       
     } catch (error) {
       console.error("Login error:", error);

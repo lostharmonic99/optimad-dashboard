@@ -48,7 +48,6 @@ api.interceptors.response.use(
       
       originalRequest._retry = true;
       isRefreshing = true;
-      refreshAttempted = true;
       
       try {
         console.log('Attempting to refresh token...');
@@ -65,6 +64,7 @@ api.interceptors.response.use(
         // If refresh fails, redirect to login but avoid loops
         console.error('Token refresh failed:', refreshError);
         isRefreshing = false;
+        refreshAttempted = true; // Mark that we've attempted a refresh
         
         // Only redirect to login if not already on the login page
         if (!window.location.pathname.includes('/login')) {
@@ -92,6 +92,7 @@ export const authService = {
       
       // Reset refresh attempt flag after successful login
       refreshAttempted = false;
+      isRefreshing = false;
       
       return response.data;
     } catch (error) {
@@ -109,6 +110,7 @@ export const authService = {
       
       // Reset refresh attempt flag after successful registration
       refreshAttempted = false;
+      isRefreshing = false;
       
       return response.data;
     } catch (error) {
@@ -129,7 +131,7 @@ export const authService = {
       refreshAttempted = false;
       isRefreshing = false;
       
-      // Use navigate to prevent page reload
+      // Use direct window location change to ensure complete reset
       window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
@@ -177,7 +179,7 @@ export const authService = {
     }
   },
   
-  // Social login methods - these now work with OAuth flow instead of token-based auth
+  // Social login methods - these work with OAuth flow
   googleLogin: () => {
     window.location.href = `${API_URL}/auth/google/login`;
   },
