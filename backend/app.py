@@ -3,22 +3,18 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 import os
-from datetime import timedelta
 from flask_migrate import Migrate
-import click
-
-# Import all models
 from models import db, User, RefreshToken, Subscription, Campaign, Targeting, Creative, Payment
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
-# Initialize Flask app
+# Initialize Flask application
 app = Flask(__name__)
 
-# Configure app
+# Flask configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///optimad.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///instance/optimad.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'dev-jwt-secret')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 3600))  # 1 hour
@@ -28,15 +24,13 @@ app.config['JWT_COOKIE_CSRF_PROTECT'] = os.getenv('JWT_COOKIE_CSRF_PROTECT', 'Tr
 app.config['JWT_TOKEN_LOCATION'] = ['cookies']
 app.config['JWT_COOKIE_SAMESITE'] = 'Lax'
 
-# Initialize extensions
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+# Initialize Flask extensions
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)  # Frontend URL
 jwt = JWTManager(app)
 db.init_app(app)
-
-# Initialize Flask-Migrate
 migrate = Migrate(app, db)
 
-# Register blueprints
+# Register blueprints for routing
 from routes.auth import auth_bp
 from routes.campaigns import campaign_bp
 from routes.subscriptions import subscription_bp
@@ -52,10 +46,10 @@ register_error_handlers(app)
 from middleware.rbac import setup_rbac
 setup_rbac(jwt)
 
-# Health check route
 @app.route('/')
 def index():
-    return {'status': 'API is running'}, 200
+    """Health check endpoint for the API."""
+    return jsonify({'status': 'API is running'}), 200
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

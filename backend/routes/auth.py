@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import (
     create_access_token, 
@@ -8,7 +7,8 @@ from flask_jwt_extended import (
     set_access_cookies,
     set_refresh_cookies,
     unset_jwt_cookies,
-    get_jwt
+    get_jwt,
+    decode_token  # Added for decoding refresh tokens
 )
 import requests
 import json
@@ -249,7 +249,7 @@ def get_user():
         return jsonify(user.to_dict()), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+    
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh_token():
@@ -257,10 +257,18 @@ def refresh_token():
         # Get user ID from refresh token
         user_id = get_jwt_identity()
         
-        # Check if user exists
+        # Find user by ID
         user = User.query.filter_by(id=user_id).first()
         if not user:
             return jsonify({'error': 'User not found'}), 404
+        
+        # Get the refresh token from the database
+        refresh_token_jti = get_jwt().get('jti')  # JWT ID of the refresh token
+        db_refresh_token = RefreshToken.query.filter_by(token=refresh_token_jti, user_id=user_id).first()
+        
+        # Check if the refresh token exists and is valid
+        if not db_refresh_token or not db_refresh_token.is_valid():
+            return jsonify({'error': 'Invalid or expired refresh token'}), 401
         
         # Generate new access token
         access_token = create_access_token(identity=str(user_id))
@@ -281,12 +289,13 @@ def refresh_token():
 def logout():
     try:
         # Get current token
-        token = get_jwt().get('jti', None)
+        token_jti = get_jwt().get('jti', None)
         user_id = get_jwt_identity()
         
         # Delete refresh token if user is logged in
-        if user_id:
-            delete_refresh_tokens(user_id)
+        if user_id and token_jti:
+            RefreshToken.query.filter_by(token=token_jti, user_id=user_id).delete()
+            db.session.commit()
         
         resp = make_response(jsonify({
             'message': 'Logged out successfully'
@@ -299,27 +308,38 @@ def logout():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 # Helper functions for refresh token management
 def store_refresh_token(user_id, refresh_token_jwt):
-    # Generate a unique token ID
-    token_id = str(uuid.uuid4())
-    
-    # Calculate expiry time
-    expires_at = datetime.utcnow() + timedelta(days=30)  # 30 days
-    
-    # Create new refresh token
-    refresh_token = RefreshToken(
-        user_id=user_id,
-        token=token_id,
-        expires_at=expires_at
-    )
-    
-    # Save to database
-    db.session.add(refresh_token)
-    db.session.commit()
-    
-    return refresh_token
+    """Store a refresh token in the database by decoding the JWT and extracting the jti."""
+    try:
+        # Decode the refresh token to extract the jti
+        decoded_token = decode_token(refresh_token_jwt)
+        token_id = decoded_token.get('jti')
+        
+        if not token_id:
+            raise ValueError("Refresh token does not contain a valid 'jti'")
+        
+        # Calculate expiry time
+        expires_at = datetime.utcnow() + timedelta(days=30)  # 30 days
+        
+        # Create new refresh token
+        refresh_token = RefreshToken(
+            user_id=user_id,
+            token=token_id,  # Store the JWT ID (jti)
+            expires_at=expires_at
+        )
+        
+        # Save to database
+        db.session.add(refresh_token)
+        db.session.commit()
+        
+        return refresh_token
+    except Exception as e:
+        db.session.rollback()
+        raise Exception(f"Failed to store refresh token: {str(e)}")
 
 def delete_refresh_tokens(user_id):
+    """Delete all refresh tokens for a given user."""
     RefreshToken.query.filter_by(user_id=user_id).delete()
     db.session.commit()

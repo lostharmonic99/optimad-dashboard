@@ -1,11 +1,11 @@
-
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+// src/pages/Login.tsx
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -13,13 +13,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { authService } from "@/services/api";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import useAuth from '@/hooks/useAuth';
+import { authService } from '@/services/api';
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -27,37 +28,37 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      console.log("Login submission with:", data.email);
-      await authService.login(data);
-      
+      console.log('Login submission with:', data.email);
+      await login(data);
+
       toast({
-        title: "Login successful",
+        title: 'Login successful',
         description: "You've been successfully logged in",
       });
-      
+
       // Force immediate redirect to dashboard
-      console.log("Login successful, navigating to dashboard immediately");
-      navigate("/dashboard", { replace: true });
-      
+      console.log('Login successful, navigating to dashboard immediately');
+      navigate('/dashboard', { replace: true });
     } catch (error) {
-      console.error("Login error:", error);
+      console.error('Login error:', error);
       toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Please try again",
+        variant: 'destructive',
+        title: 'Login failed',
+        description: error instanceof Error ? error.message : 'Please try again',
       });
     } finally {
       setIsLoading(false);
@@ -65,12 +66,12 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    console.log("Redirecting to Google OAuth login");
+    console.log('Redirecting to Google OAuth login');
     authService.googleLogin();
   };
 
   const handleFacebookLogin = () => {
-    console.log("Redirecting to Facebook OAuth login");
+    console.log('Redirecting to Facebook OAuth login');
     authService.facebookLogin();
   };
 
@@ -126,7 +127,7 @@ const Login = () => {
                 )}
               />
               <Button disabled={isLoading} type="submit" className="w-full">
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? 'Logging in...' : 'Login'}
               </Button>
             </form>
           </Form>
@@ -157,14 +158,14 @@ const Login = () => {
             </Button>
           </div>
           <p className="px-8 text-center text-sm text-muted-foreground">
-            By continuing, you are agree to our{" "}
+            By continuing, you are agree to our{' '}
             <Link
               to="#"
               className="hover:text-foreground underline underline-offset-2"
             >
               Terms of Service
-            </Link>{" "}
-            and{" "}
+            </Link>{' '}
+            and{' '}
             <Link
               to="#"
               className="hover:text-foreground underline underline-offset-2"

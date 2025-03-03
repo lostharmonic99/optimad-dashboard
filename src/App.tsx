@@ -1,28 +1,27 @@
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Navbar from '@/components/Navbar';
+import Index from './pages/Index';
+import CreateCampaign from './pages/CreateCampaign';
+import CampaignDetails from './pages/CampaignDetails';
+import EditCampaign from './pages/EditCampaign';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ResetPassword from './pages/ResetPassword';
+import Onboarding from './pages/Onboarding';
+import NotFound from './pages/NotFound';
+import LandingPage from './pages/LandingPage';
+import Subscription from './pages/Subscription';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Index from "./pages/Index";
-import CreateCampaign from "./pages/CreateCampaign";
-import CampaignDetails from "./pages/CampaignDetails";
-import EditCampaign from "./pages/EditCampaign";
-import Analytics from "./pages/Analytics";
-import Settings from "./pages/Settings";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ResetPassword from "./pages/ResetPassword";
-import Onboarding from "./pages/Onboarding";
-import NotFound from "./pages/NotFound";
-import LandingPage from "./pages/LandingPage";
-import Subscription from "./pages/Subscription";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import { useEffect } from "react";
-import { authService } from "@/services/api";
-
-// Create a new QueryClient instance with improved settings
+/**
+ * QueryClient instance with default options for caching and retries.
+ */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -33,10 +32,11 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
-  // We'll skip the preload auth completely to avoid unnecessary token refreshes
-  // This will be handled by the ProtectedRoute component on demand
-  
+/**
+ * Main application component defining routes and layout.
+ * @returns {JSX.Element} The rendered application with routing and providers.
+ */
+const App = (): JSX.Element => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -45,25 +45,21 @@ const App = () => {
         <BrowserRouter>
           <div className="min-h-screen bg-background">
             <Routes>
-              {/* Landing page */}
+              {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
-              
-              {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              
-              {/* Protected routes */}
-              <Route 
-                path="/onboarding" 
+
+              {/* Protected Routes */}
+              <Route
+                path="/onboarding"
                 element={
                   <ProtectedRoute>
                     <Onboarding />
                   </ProtectedRoute>
-                } 
+                }
               />
-              
-              {/* Protected app routes with Navbar */}
               <Route
                 path="/dashboard"
                 element={
@@ -141,8 +137,8 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-              
-              {/* 404 route */}
+
+              {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

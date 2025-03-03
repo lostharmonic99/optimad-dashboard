@@ -68,11 +68,12 @@ class RefreshToken(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    token = db.Column(db.String(255), unique=True, nullable=False)
+    token = db.Column(db.String(255), unique=True, nullable=False)  # JWT ID (jti)
     expires_at = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def is_valid(self):
+        """Check if the refresh token is still valid."""
         return datetime.utcnow() < self.expires_at
 
 class Subscription(db.Model):
