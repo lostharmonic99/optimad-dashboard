@@ -1,21 +1,56 @@
+
 import api from './api';
 
-export const createAdmin = async (data: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-}) => {
-  const response = await api.post('/admin/create-admin', data);
-  return response.data;
+// Function to get dashboard statistics for admin/super users
+export const getStats = async () => {
+  try {
+    const response = await api.get('/admin/stats');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    throw error;
+  }
 };
 
-export const assignRole = async (data: { userId: string; role: string }) => {
-  const response = await api.post('/admin/assign-role', data);
-  return response.data;
+// Function to get all users for admin management
+export const getUsers = async () => {
+  try {
+    const response = await api.get('/admin/users');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
 };
 
-export const overrideSubscription = async (data: { userId: string; subscriptionId: string }) => {
-  const response = await api.post('/subscriptions/override', data);
-  return response.data;
+// Function to get all campaigns across users
+export const getAllCampaigns = async () => {
+  try {
+    const response = await api.get('/admin/campaigns');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all campaigns:', error);
+    throw error;
+  }
 };
+
+// Function to get subscription data
+export const getSubscriptionData = async () => {
+  try {
+    const response = await api.get('/admin/subscriptions');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching subscription data:', error);
+    throw error;
+  }
+};
+
+// Export the admin service functions
+const adminService = {
+  getStats,
+  getUsers,
+  getAllCampaigns,
+  getSubscriptionData
+};
+
+export { adminService };
