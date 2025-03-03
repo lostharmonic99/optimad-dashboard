@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps): JSX.Element => {
   }
 
   // Define public routes that don't require authentication
-  const isPublicRoute = location.pathname.match(/\/(login|signup|reset-password|$)/);
+  const isPublicRoute = Boolean(location.pathname.match(/\/(login|signup|reset-password|$)/));
   
   if (!isAuthenticated && !isPublicRoute) {
     console.log('Not authenticated, redirecting to login from:', location.pathname);

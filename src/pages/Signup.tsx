@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -63,12 +64,20 @@ const Signup = () => {
     setIsLoading(true);
     
     try {
-      await api.post('/auth/register', {
+      console.log('Submitting registration data:', {
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName
+      });
+      
+      const response = await api.post('/auth/register', {
         email: data.email,
         password: data.password,
         firstName: data.firstName,
         lastName: data.lastName
       });
+      
+      console.log('Registration response:', response.data);
       
       toast({
         title: "Account created successfully!",
@@ -89,11 +98,11 @@ const Signup = () => {
   };
 
   const handleGoogleSignup = () => {
-    window.location.href = 'http://localhost:5000/auth/google';
+    window.location.href = 'http://127.0.0.1:5000/auth/google';
   };
 
   const handleFacebookSignup = () => {
-    window.location.href = 'http://localhost:5000/auth/facebook';
+    window.location.href = 'http://127.0.0.1:5000/auth/facebook';
   };
 
   return (

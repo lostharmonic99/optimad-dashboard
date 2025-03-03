@@ -1,3 +1,4 @@
+
 // src/pages/Login.tsx
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -69,11 +70,11 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5000/auth/google';
+    window.location.href = 'http://127.0.0.1:5000/auth/google';
   };
 
   const handleFacebookLogin = () => {
-    window.location.href = 'http://localhost:5000/auth/facebook';
+    window.location.href = 'http://127.0.0.1:5000/auth/facebook';
   };
 
   return (

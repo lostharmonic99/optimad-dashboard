@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Configure API URL - pointing to the Flask backend
-const API_URL = 'http://localhost:5000'; // Backend server running on port 5000
+const API_URL = 'http://127.0.0.1:5000'; // Update to match exactly what your Flask server is running on
 
 /**
  * Axios instance for API requests with default configuration.
@@ -42,7 +42,7 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
-    console.log(`API Error Response: ${error.response?.status} ${originalRequest?.url}`);
+    console.log(`API Error Response: ${error.response?.status} ${originalRequest?.url}`, error);
 
     if (error.response?.status === 401 && !originalRequest._retry && !isRefreshing) {
       originalRequest._retry = true;
