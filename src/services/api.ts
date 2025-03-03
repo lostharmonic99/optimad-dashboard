@@ -1,6 +1,8 @@
+
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api'; // Proxy path to backend
+// Configure API URL - pointing to the Flask backend
+const API_URL = 'http://localhost:5000'; // Backend server running on port 5000
 
 /**
  * Axios instance for API requests with default configuration.

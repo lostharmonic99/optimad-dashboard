@@ -69,13 +69,11 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    console.log('Redirecting to Google OAuth login');
-    // Implement Google login logic here
+    window.location.href = 'http://localhost:5000/auth/google';
   };
 
   const handleFacebookLogin = () => {
-    console.log('Redirecting to Facebook OAuth login');
-    // Implement Facebook login logic here
+    window.location.href = 'http://localhost:5000/auth/facebook';
   };
 
   return (

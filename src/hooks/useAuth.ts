@@ -1,6 +1,7 @@
 
 // src/hooks/useAuth.ts
 import { useState, useEffect } from 'react';
+import api from '../services/api';
 
 /**
  * useAuth hook provides authentication state and methods for login, logout, and token management.
@@ -15,12 +16,13 @@ const useAuth = () => {
    * Checks the authentication status on mount
    */
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        // Check if user data exists in localStorage
-        const userData = localStorage.getItem('user');
-        if (userData) {
-          setUser(JSON.parse(userData));
+        setIsLoading(true);
+        // Check auth with the backend
+        const response = await api.get('/auth/me');
+        if (response.data) {
+          setUser(response.data);
           setIsAuthenticated(true);
         }
       } catch (error) {
@@ -33,16 +35,6 @@ const useAuth = () => {
     };
 
     checkAuth();
-
-    // Listen for storage events (if user logs in from another tab)
-    const handleStorageChange = (event) => {
-      if (event.key === 'user' || event.key === 'token') {
-        checkAuth();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   /**
@@ -53,33 +45,17 @@ const useAuth = () => {
     try {
       console.log('Attempting login with:', credentials.email);
       
-      // Mock login - in a real app, this would call an API
-      // For demo purposes, accept any credentials with valid format
-      if (!credentials.email || !credentials.password) {
-        throw new Error('Email and password are required');
-      }
+      const response = await api.post('/auth/login', credentials);
       
-      // Create a mock user response
-      const user = {
-        id: 1,
-        email: credentials.email,
-        firstName: credentials.email.split('@')[0],
-        lastName: '',
-        role: 'user',
-        subscriptionStatus: 'free',
-      };
-      
-      // Store user data in localStorage
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('token', 'mock-token-' + Date.now());
-      
+      // Get user data from the response
+      const userData = response.data.user;
       setIsAuthenticated(true);
-      setUser(user);
+      setUser(userData);
       
-      return user;
+      return userData;
     } catch (error) {
       console.error('Login error:', error);
-      throw new Error('Login failed, please try again');
+      throw new Error(error.response?.data?.error || 'Login failed, please try again');
     }
   };
 
@@ -88,14 +64,14 @@ const useAuth = () => {
    */
   const logout = async () => {
     try {
-      // Clear localStorage
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      // Call the logout endpoint
+      await api.post('/auth/logout');
       
       setIsAuthenticated(false);
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
+      throw new Error('Logout failed');
     }
   };
 

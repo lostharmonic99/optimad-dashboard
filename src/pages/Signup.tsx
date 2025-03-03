@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,10 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Facebook, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/services/api";
 
 const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
+  firstName: z.string().min(2, {
+    message: "First name must be at least 2 characters.",
+  }),
+  lastName: z.string().min(2, {
+    message: "Last name must be at least 2 characters.",
   }),
   email: z.string().email({
     message: "Please enter a valid email address.",
@@ -41,12 +44,14 @@ type FormValues = z.infer<typeof formSchema>;
 
 const Signup = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -58,26 +63,37 @@ const Signup = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log("Signup data:", data);
+      const response = await api.post('/auth/register', {
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName
+      });
       
       toast({
         title: "Account created successfully!",
         description: "Redirecting to onboarding...",
       });
       
-      // Redirect would happen here in a real app
-    } catch (error) {
+      navigate("/onboarding");
+    } catch (error: any) {
+      console.error("Signup error:", error);
       toast({
         title: "Signup failed",
-        description: "There was an error creating your account.",
+        description: error.response?.data?.error || "There was an error creating your account.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleSignup = () => {
+    window.location.href = 'http://localhost:5000/auth/google';
+  };
+
+  const handleFacebookSignup = () => {
+    window.location.href = 'http://localhost:5000/auth/facebook';
   };
 
   return (
@@ -160,13 +176,31 @@ const Signup = () => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full Name</FormLabel>
+                        <FormLabel>First Name</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="John Doe" 
+                            placeholder="John" 
+                            {...field} 
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Doe" 
                             {...field} 
                             disabled={isLoading}
                           />

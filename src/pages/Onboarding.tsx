@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import api from "@/services/api";
 
 const userFormSchema = z.object({
   organization: z.string().min(1, "Organization name is required"),
@@ -52,15 +53,16 @@ const Onboarding = () => {
     setIsLoading(true);
     try {
       console.log('Submitting onboarding data:', data);
-      // Save onboarding data - this would typically update user profile
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      // Submit user profile data to backend
+      await api.post('/users/profile', data);
       
       toast({
         title: "Onboarding complete",
         description: "Your profile has been set up successfully",
       });
       
-      // Explicitly navigate with timeout to ensure toast is shown
+      // Navigate to dashboard
       setTimeout(() => {
         console.log('Navigating to dashboard after onboarding');
         navigate("/dashboard");
