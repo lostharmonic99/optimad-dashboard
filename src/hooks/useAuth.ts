@@ -19,7 +19,7 @@ const useAuth = () => {
     const checkAuth = async () => {
       try {
         setIsLoading(true);
-        // Check auth with the backend
+        // Check auth with the backend using cookies
         const response = await api.get('/auth/me');
         if (response.data) {
           setUser(response.data);
@@ -45,6 +45,7 @@ const useAuth = () => {
     try {
       console.log('Attempting login with:', credentials.email);
       
+      // Sends credentials and receives cookies (set by the backend)
       const response = await api.post('/auth/login', credentials);
       
       // Get user data from the response
@@ -64,7 +65,7 @@ const useAuth = () => {
    */
   const logout = async () => {
     try {
-      // Call the logout endpoint
+      // Call the logout endpoint - the backend will clear cookies
       await api.post('/auth/logout');
       
       setIsAuthenticated(false);

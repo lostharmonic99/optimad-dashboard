@@ -63,7 +63,7 @@ const Signup = () => {
     setIsLoading(true);
     
     try {
-      const response = await api.post('/auth/register', {
+      await api.post('/auth/register', {
         email: data.email,
         password: data.password,
         firstName: data.firstName,
