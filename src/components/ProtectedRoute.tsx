@@ -1,3 +1,4 @@
+
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import useAuth from '@/hooks/useAuth';
@@ -17,18 +18,18 @@ interface ProtectedRouteProps {
  * @returns {JSX.Element} Protected content, spinner, or redirect.
  */
 const ProtectedRoute = ({ children }: ProtectedRouteProps): JSX.Element => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute: isLoading:', 'isAuthenticated:', isAuthenticated, 'path:', location.pathname);
+  console.log('ProtectedRoute: isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'path:', location.pathname);
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <Spinner size="lg" />
-  //     </div>
-  //   );
-  // }
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   const isPublicRoute = location.pathname.match(/\/(login|signup|reset-password|$)/);
   if (!isAuthenticated && !isPublicRoute) {
@@ -36,7 +37,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps): JSX.Element => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  console.log('Authenticated, rendering protected content for:', location.pathname);
+  console.log('Authenticated or public route, rendering content for:', location.pathname);
   return <>{children}</>;
 };
 

@@ -1,6 +1,6 @@
 // src/pages/Login.tsx
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import useAuth from '@/hooks/useAuth';
-import { authService } from '@/services/api';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -28,8 +27,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get the intended destination from location state, or default to dashboard
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -51,8 +54,8 @@ const Login = () => {
       });
 
       // Force immediate redirect to dashboard
-      console.log('Login successful, navigating to dashboard immediately');
-      navigate('/dashboard', { replace: true });
+      console.log('Login successful, navigating to', from);
+      navigate(from, { replace: true });
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -67,12 +70,12 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     console.log('Redirecting to Google OAuth login');
-    authService.googleLogin();
+    // Implement Google login logic here
   };
 
   const handleFacebookLogin = () => {
     console.log('Redirecting to Facebook OAuth login');
-    authService.facebookLogin();
+    // Implement Facebook login logic here
   };
 
   return (
